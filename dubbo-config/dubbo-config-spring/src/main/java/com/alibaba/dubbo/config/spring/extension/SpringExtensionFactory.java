@@ -52,6 +52,7 @@ public class SpringExtensionFactory implements ExtensionFactory {
     @SuppressWarnings("unchecked")
     public <T> T getExtension(Class<T> type, String name) {
         for (ApplicationContext context : contexts) {
+            // 根据name查询
             if (context.containsBean(name)) {
                 Object bean = context.getBean(name);
                 if (type.isInstance(bean)) {
@@ -68,6 +69,7 @@ public class SpringExtensionFactory implements ExtensionFactory {
 
         for (ApplicationContext context : contexts) {
             try {
+                // 根据类型查找
                 return context.getBean(type);
             } catch (NoUniqueBeanDefinitionException multiBeanExe) {
                 logger.warn("Find more than 1 spring extensions (beans) of type " + type.getName() + ", will stop auto injection. Please make sure you have specified the concrete parameter type and there's only one extension of that type.");

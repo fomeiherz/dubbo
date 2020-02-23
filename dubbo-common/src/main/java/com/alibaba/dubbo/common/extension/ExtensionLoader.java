@@ -60,32 +60,44 @@ public class ExtensionLoader<T> {
 
     private static final Logger logger = LoggerFactory.getLogger(ExtensionLoader.class);
 
+    // JDK SPI目录
     private static final String SERVICES_DIRECTORY = "META-INF/services/";
 
+    // Dubbo SPI配置路径
     private static final String DUBBO_DIRECTORY = "META-INF/dubbo/";
 
+    // Dubbo SPI配置路径：META-INF/dubbo/internal/
     private static final String DUBBO_INTERNAL_DIRECTORY = DUBBO_DIRECTORY + "internal/";
 
     private static final Pattern NAME_SEPARATOR = Pattern.compile("\\s*[,]+\\s*");
 
+    // 扩展类与对应的扩展类加载器缓存
+    // 该变量是全局唯一，Class<ExtensionFactory>有且仅有一个ExtensionLoader<ExtensionFactory>
     private static final ConcurrentMap<Class<?>, ExtensionLoader<?>> EXTENSION_LOADERS = new ConcurrentHashMap<Class<?>, ExtensionLoader<?>>();
 
+    // 扩展类初始化后的实例
     private static final ConcurrentMap<Class<?>, Object> EXTENSION_INSTANCES = new ConcurrentHashMap<Class<?>, Object>();
 
     // ==============================
 
+    // ExtensionLoader的Class<?>类型
     private final Class<?> type;
 
     private final ExtensionFactory objectFactory;
 
     private final ConcurrentMap<Class<?>, String> cachedNames = new ConcurrentHashMap<Class<?>, String>();
 
+    // 普通扩展类缓存
+    // 不包括自适应扩展类（@Adaptive注解类）和Wrapper类
     private final Holder<Map<String, Class<?>>> cachedClasses = new Holder<Map<String, Class<?>>>();
 
+    // 自适应扩展类缓存
     private final Map<String, Activate> cachedActivates = new ConcurrentHashMap<String, Activate>();
+    // 扩展名和扩展对象缓存
     private final ConcurrentMap<String, Holder<Object>> cachedInstances = new ConcurrentHashMap<String, Holder<Object>>();
+    // 实例化后的自适应扩展对象，只能存在一个
     private final Holder<Object> cachedAdaptiveInstance = new Holder<Object>();
-    private volatile Class<?> cachedAdaptiveClass = null;
+    private volatile Class<?> cachedAdaptiveClass = null; // com.alibaba.dubbo.common.extension.factory.AdaptiveExtensionFactory
     private String cachedDefaultName;
     private volatile Throwable createAdaptiveInstanceError;
 
@@ -95,6 +107,7 @@ public class ExtensionLoader<T> {
 
     private ExtensionLoader(Class<?> type) {
         this.type = type;
+        // objectFactory返回的是AdaptiveExtensionFactory对象，因为只有它有@Adaptive有这个注解
         objectFactory = (type == ExtensionFactory.class ? null : ExtensionLoader.getExtensionLoader(ExtensionFactory.class).getAdaptiveExtension());
     }
 
@@ -184,11 +197,13 @@ public class ExtensionLoader<T> {
     public List<T> getActivateExtension(URL url, String[] values, String group) {
         List<T> exts = new ArrayList<T>();
         List<String> names = values == null ? new ArrayList<String>(0) : Arrays.asList(values);
+        // -default值时，不处理
         if (!names.contains(Constants.REMOVE_VALUE_PREFIX + Constants.DEFAULT_KEY)) {
             getExtensionClasses();
             for (Map.Entry<String, Activate> entry : cachedActivates.entrySet()) {
                 String name = entry.getKey();
                 Activate activate = entry.getValue();
+                // Consumer对应的组
                 if (isMatchGroup(group, activate.group())) {
                     T ext = getExtension(name);
                     if (!names.contains(name)
@@ -318,11 +333,13 @@ public class ExtensionLoader<T> {
      * Return default extension, return <code>null</code> if it's not configured.
      */
     public T getDefaultExtension() {
+        // 加载META-INF/...目录下的文件
         getExtensionClasses();
         if (null == cachedDefaultName || cachedDefaultName.length() == 0
                 || "true".equals(cachedDefaultName)) {
             return null;
         }
+        // 创建或获取实例
         return getExtension(cachedDefaultName);
     }
 
@@ -498,6 +515,7 @@ public class ExtensionLoader<T> {
             Set<Class<?>> wrapperClasses = cachedWrapperClasses;
             if (wrapperClasses != null && !wrapperClasses.isEmpty()) {
                 for (Class<?> wrapperClass : wrapperClasses) {
+                    // 装饰器模式wrapper封装对象实例
                     instance = injectExtension((T) wrapperClass.getConstructor(type).newInstance(instance));
                 }
             }
@@ -651,7 +669,7 @@ public class ExtensionLoader<T> {
                     type + ", class line: " + clazz.getName() + "), class "
                     + clazz.getName() + "is not subtype of interface.");
         }
-        if (clazz.isAnnotationPresent(Adaptive.class)) {
+        if (clazz.isAnnotationPresent(Adaptive.class)) { // eg. com.alibaba.dubbo.common.extension.factory.AdaptiveExtensionFactory
             if (cachedAdaptiveClass == null) {
                 cachedAdaptiveClass = clazz;
             } else if (!cachedAdaptiveClass.equals(clazz)) {
@@ -659,7 +677,7 @@ public class ExtensionLoader<T> {
                         + cachedAdaptiveClass.getClass().getName()
                         + ", " + clazz.getClass().getName());
             }
-        } else if (isWrapperClass(clazz)) {
+        } else if (isWrapperClass(clazz)) { // 封装类类型
             Set<Class<?>> wrappers = cachedWrapperClasses;
             if (wrappers == null) {
                 cachedWrapperClasses = new ConcurrentHashSet<Class<?>>();
@@ -728,6 +746,8 @@ public class ExtensionLoader<T> {
 
     private Class<?> getAdaptiveExtensionClass() {
         getExtensionClasses();
+        // 当type=com.alibaba.dubbo.common.extension.ExtensionFactory时
+        // cachedAdaptiveClass=com.alibaba.dubbo.common.extension.factory.AdaptiveExtensionFactory
         if (cachedAdaptiveClass != null) {
             return cachedAdaptiveClass;
         }

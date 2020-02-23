@@ -16,7 +16,12 @@
  */
 package com.alibaba.dubbo.demo.provider;
 
+import com.alibaba.dubbo.config.spring.ServiceBean;
+import org.springframework.beans.factory.BeanFactory;
+import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
+
+import java.util.Arrays;
 
 public class Provider {
 
@@ -27,7 +32,26 @@ public class Provider {
         ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(new String[]{"META-INF/spring/dubbo-demo-provider.xml"});
         context.start();
 
+        // 通过Class Type查找
+        //lookupByType(context);
+        //listableBeanInfo(context);
+
         System.in.read(); // press any key to exit
+    }
+
+    private static void lookupByType(BeanFactory beanFactory) {
+        if (beanFactory instanceof ListableBeanFactory) {
+            ListableBeanFactory listableBeanFactory = (ListableBeanFactory) beanFactory;
+            System.out.println(listableBeanFactory.getBeansOfType(ServiceBean.class));
+        }
+    }
+
+    private static void listableBeanInfo(BeanFactory beanFactory) {
+        if (beanFactory instanceof ListableBeanFactory) {
+            ListableBeanFactory listableBeanFactory = (ListableBeanFactory) beanFactory;
+            System.out.println(Arrays.toString(listableBeanFactory.getBeanDefinitionNames()));
+            System.out.println(listableBeanFactory.getBeanDefinitionCount());
+        }
     }
 
 }

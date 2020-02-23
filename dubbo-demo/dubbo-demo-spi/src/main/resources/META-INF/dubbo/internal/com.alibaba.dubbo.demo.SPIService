@@ -1,0 +1,3 @@
+impl=com.alibaba.dubbo.demo.impl.SPIServiceImpl
+impl2=com.alibaba.dubbo.demo.impl.SPIServiceImpl2
+#wrapper=com.alibaba.dubbo.demo.impl.SPIServiceWrapper

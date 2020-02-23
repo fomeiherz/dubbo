@@ -71,10 +71,17 @@ public class DubboBeanDefinitionParser implements BeanDefinitionParser {
         this.required = required;
     }
 
+    /**
+     * 解析<dubbo:application ...>标签到BeanDefinition对象中
+     */
     @SuppressWarnings("unchecked")
     private static BeanDefinition parse(Element element, ParserContext parserContext, Class<?> beanClass, boolean required) {
+        // 通过 BeanDefinition 派生类创建 beanDefinition
         RootBeanDefinition beanDefinition = new RootBeanDefinition();
+        // 设置 BeanDefinition 元信息
+        // Bean 全类名，必须是具体类，不能用抽象类或接口
         beanDefinition.setBeanClass(beanClass);
+        // Bean 延迟初始化模式（延迟和非延迟）
         beanDefinition.setLazyInit(false);
         String id = element.getAttribute("id");
         if ((id == null || id.length() == 0) && required) {
@@ -99,7 +106,9 @@ public class DubboBeanDefinitionParser implements BeanDefinitionParser {
             if (parserContext.getRegistry().containsBeanDefinition(id)) {
                 throw new IllegalStateException("Duplicate spring bean id " + id);
             }
+            // Java API 注册 BeanDefinition：BeanDefinitionRegistry#registerBeanDefinition(String,  BeanDefinition)
             parserContext.getRegistry().registerBeanDefinition(id, beanDefinition);
+            // Bean 属性设置（用于依赖注入）
             beanDefinition.getPropertyValues().addPropertyValue("id", id);
         }
         if (ProtocolConfig.class.equals(beanClass)) {
@@ -120,6 +129,7 @@ public class DubboBeanDefinitionParser implements BeanDefinitionParser {
                 classDefinition.setBeanClass(ReflectUtils.forName(className));
                 classDefinition.setLazyInit(false);
                 parseProperties(element.getChildNodes(), classDefinition);
+                // 把 BeanDefinition 对象封装到 BeanDefinitionHolder 对象中
                 beanDefinition.getPropertyValues().addPropertyValue("ref", new BeanDefinitionHolder(classDefinition, id + "Impl"));
             }
         } else if (ProviderConfig.class.equals(beanClass)) {
