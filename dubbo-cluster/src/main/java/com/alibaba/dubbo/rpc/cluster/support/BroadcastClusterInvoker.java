@@ -32,6 +32,7 @@ import java.util.List;
  * BroadcastClusterInvoker
  *
  */
+// Broadcast：广播式调用所有可用的服务
 public class BroadcastClusterInvoker<T> extends AbstractClusterInvoker<T> {
 
     private static final Logger logger = LoggerFactory.getLogger(BroadcastClusterInvoker.class);

@@ -41,6 +41,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * <a href="http://en.wikipedia.org/wiki/Fork_(topology)">Fork</a>
  *
  */
+// Forking：同时调用多个可用的服务，其中一个返回，则返回
 public class ForkingClusterInvoker<T> extends AbstractClusterInvoker<T> {
 
     /**
@@ -75,7 +76,9 @@ public class ForkingClusterInvoker<T> extends AbstractClusterInvoker<T> {
                 }
             }
             RpcContext.getContext().setInvokers((List) selected);
+            // 错误次数
             final AtomicInteger count = new AtomicInteger();
+            // 接收返回值的队列
             final BlockingQueue<Object> ref = new LinkedBlockingQueue<Object>();
             for (final Invoker<T> invoker : selected) {
                 executor.execute(new Runnable() {
@@ -94,6 +97,7 @@ public class ForkingClusterInvoker<T> extends AbstractClusterInvoker<T> {
                 });
             }
             try {
+                // 其中一个返回，则取出来
                 Object ret = ref.poll(timeout, TimeUnit.MILLISECONDS);
                 if (ret instanceof Throwable) {
                     Throwable e = (Throwable) ret;

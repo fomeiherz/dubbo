@@ -45,6 +45,7 @@ import java.util.concurrent.TimeUnit;
  * <a href="http://en.wikipedia.org/wiki/Failback">Failback</a>
  *
  */
+// Failback：失败了，忽略并记录到一个Map中，然后定时任务定时重试直到成功
 public class FailbackClusterInvoker<T> extends AbstractClusterInvoker<T> {
 
     private static final Logger logger = LoggerFactory.getLogger(FailbackClusterInvoker.class);

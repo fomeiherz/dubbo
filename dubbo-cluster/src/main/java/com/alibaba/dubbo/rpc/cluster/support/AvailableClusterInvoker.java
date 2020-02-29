@@ -29,6 +29,7 @@ import java.util.List;
  * AvailableCluster
  *
  */
+// Available：找到一个可用的服务则立即发起调用
 public class AvailableClusterInvoker<T> extends AbstractClusterInvoker<T> {
 
     public AvailableClusterInvoker(Directory<T> directory) {
